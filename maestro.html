@@ -74,6 +74,12 @@ main{padding:22px 22px 50px;max-width:1200px;margin:0 auto;}
 .btn-iniciar:disabled{opacity:0.35;cursor:not-allowed;}
 .btn-danger{background:none;border:1px solid var(--border);color:var(--text-muted);}
 .btn-danger:hover{border-color:var(--red-lt);color:var(--red-lt);}
+.btn-pausa{background:var(--amber);color:var(--gold-pale);border:1px solid var(--amber-lt);}
+.btn-pausa:hover:not(:disabled){background:var(--amber-lt);}
+.btn-pausa.pausado{background:var(--green);color:var(--gold-pale);border:1px solid var(--green-lt);}
+.btn-pausa.pausado:hover:not(:disabled){background:var(--green-lt);}
+.btn-pausa:disabled{opacity:0.35;cursor:not-allowed;}
+.pausa-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:3px;color:var(--text-muted);text-align:center;margin-top:6px;min-height:14px;}
 
 /* AJUSTE TIEMPO */
 .tiempo-ajuste{border-top:1px solid var(--border);padding-top:10px;width:100%;}
@@ -169,6 +175,7 @@ tbody td{padding:11px 13px;font-size:13px;vertical-align:middle;}
 .final-banner.show{display:block;}
 .final-titulo{font-family:'IM Fell English SC',serif;font-size:clamp(18px,2.8vw,28px);color:var(--red-lt);margin-bottom:6px;}
 .final-texto{font-size:13px;color:var(--text-dim);font-style:italic;}
+.resp-badge{display:inline-block;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;padding:3px 10px;background:rgba(139,105,20,0.15);border:1px solid var(--gold-dim);color:var(--gold);}
 </style>
 </head>
 <body>
@@ -239,7 +246,11 @@ tbody td{padding:11px 13px;font-size:13px;vertical-align:middle;}
       <span class="estado-badge" id="estado-badge">⏸ Sin iniciar</span>
       <div class="btn-group">
         <button class="btn-m btn-iniciar" id="btn-iniciar" onclick="iniciarPartida()">▶ Iniciar</button>
+        <button class="btn-m btn-pausa" id="btn-pausa" onclick="pausarReanudar()" disabled>⏸ Pausar</button>
         <button class="btn-m btn-danger" onclick="resetearPartida()">↺ Resetear</button>
+      </div>
+      <div class="pausa-label" id="pausa-label"></div>
+
       </div>
       <div class="tiempo-ajuste">
         <div class="tiempo-label">Ajustar tiempo</div>
@@ -292,7 +303,7 @@ tbody td{padding:11px 13px;font-size:13px;vertical-align:middle;}
   <div class="tabla-wrap">
     <div class="sec-title">📜 Detalle de cada prueba</div>
     <table>
-      <thead><tr><th>#</th><th></th><th>Prueba</th><th>Estado</th><th>Intentos</th><th>Total</th></tr></thead>
+      <thead><tr><th>#</th><th></th><th>Prueba</th><th>Estado</th><th style="color:var(--gold-dim)">Solución</th><th>Intentos</th><th>Total</th></tr></thead>
       <tbody id="tabla-body"></tbody>
     </table>
   </div>
@@ -315,23 +326,23 @@ import { getFirestore, doc, onSnapshot, setDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const PRUEBAS=[
-  {id:1,titulo:"La Concha de Piedra",icono:"🐚"},
-  {id:2,titulo:"El Códice del Monje",icono:"📜"},
-  {id:3,titulo:"La Cruz de los Caídos",icono:"✝️"},
-  {id:4,titulo:"El Mapa del Corsario",icono:"🗺️"},
-  {id:5,titulo:"El Sello del Obispo",icono:"⚜️"},
-  {id:6,titulo:"Los Dados del Tabernero",icono:"🎲"},
-  {id:7,titulo:"La Campana Muda",icono:"🔔"},
-  {id:8,titulo:"El Espejo del Rey",icono:"🪞"},
-  {id:9,titulo:"La Tumba Sin Nombre",icono:"⚰️"}
+  {id:1,titulo:"La Concha de Piedra",icono:"🐚",respuesta:"1234"},
+  {id:2,titulo:"El Códice del Monje",icono:"📜",respuesta:"1234"},
+  {id:3,titulo:"La Cruz de los Caídos",icono:"✝️",respuesta:"1234"},
+  {id:4,titulo:"El Mapa del Corsario",icono:"🗺️",respuesta:"1234"},
+  {id:5,titulo:"El Sello del Obispo",icono:"⚜️",respuesta:"1234"},
+  {id:6,titulo:"Los Dados del Tabernero",icono:"🎲",respuesta:"1234"},
+  {id:7,titulo:"La Campana Muda",icono:"🔔",respuesta:"1234"},
+  {id:8,titulo:"El Espejo del Rey",icono:"🪞",respuesta:"1234"},
+  {id:9,titulo:"La Tumba Sin Nombre",icono:"⚰️",respuesta:"1234"}
 ];
 const DURACION=45*60;
 const SESION="partida_activa";
 const STORE_KEY="aventura_firebase_cfg";
 
 let db=null, unsubscribe=null;
-let tiempoInicio=null, juegoActivo=false, tiempoAgotado=false;
-let cronoInterval=null;
+let tiempoInicio=null, juegoActivo=false, tiempoAgotado=false, pausado=false;
+let cronoInterval=null, pausaTs=null, tiempoAcumuladoPausa=0;
 let ultimoEstado={resueltas:[],intentosPorPrueba:{}};
 
 // ── Utilidades ──
@@ -405,6 +416,7 @@ function iniciarCrono(ts){
   document.getElementById('btn-iniciar').disabled=true;
   // Habilitar botones de ajuste
   ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=false);
+  document.getElementById('btn-pausa').disabled=false;
   if(cronoInterval)clearInterval(cronoInterval);
   cronoInterval=setInterval(tick,500); tick();
 }
@@ -431,6 +443,39 @@ function tick(){
 }
 
 // ── INICIAR PARTIDA ──
+window.pausarReanudar = async function(){
+  if(!juegoActivo||tiempoAgotado)return;
+  if(!pausado){
+    // PAUSAR: detener crono local y guardar timestamp de pausa
+    pausado=true;
+    pausaTs=Date.now();
+    clearInterval(cronoInterval);
+    // Guardar en Firestore que está pausado
+    await guardar({pausado:true, pausa_ts:pausaTs});
+    document.getElementById('btn-pausa').className='btn-m btn-pausa pausado';
+    document.getElementById('btn-pausa').textContent='▶ Reanudar';
+    document.getElementById('estado-badge').className='estado-badge urgente-b';
+    document.getElementById('estado-badge').textContent='⏸ Pausado';
+    document.getElementById('pausa-label').textContent='Cronómetro pausado';
+    // Deshabilitar ajustes de tiempo durante pausa
+    ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=true);
+    addLog('info','<strong>⏸ Partida pausada</strong> por el maestro.');
+  } else {
+    // REANUDAR: calcular cuánto tiempo estuvo pausado y adelantar inicio_ts
+    pausado=false;
+    const msPausado = Date.now() - pausaTs;
+    tiempoInicio += msPausado; // adelantar el origen → el tiempo restante no cambia
+    pausaTs=null;
+    await guardar({pausado:false, pausa_ts:null, inicio_ts:tiempoInicio});
+    document.getElementById('btn-pausa').className='btn-m btn-pausa';
+    document.getElementById('btn-pausa').textContent='⏸ Pausar';
+    document.getElementById('pausa-label').textContent='';
+    ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=false);
+    cronoInterval=setInterval(tick,500); tick();
+    addLog('info','<strong>▶ Partida reanudada</strong>. Tiempo recuperado correctamente.');
+  }
+};
+
 window.iniciarPartida = async function(){
   if(!db){alert('Configura Firebase primero.');return;}
   if(juegoActivo)return;
@@ -480,6 +525,11 @@ window.resetearPartida = async function(){
   document.getElementById('estado-badge').className='estado-badge';
   document.getElementById('estado-badge').textContent='⏸ Sin iniciar';
   document.getElementById('btn-iniciar').disabled=false;
+  document.getElementById('btn-pausa').disabled=true;
+  document.getElementById('btn-pausa').className='btn-m btn-pausa';
+  document.getElementById('btn-pausa').textContent='⏸ Pausar';
+  document.getElementById('pausa-label').textContent='';
+  pausado=false; pausaTs=null;
   ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=true);
   await guardar({inicio_ts:null,resueltas:[],intentosPorPrueba:{},total_resueltas:0,mensaje_maestro:'',mensaje_ts:0});
   addLog('info','<strong>Partida reiniciada</strong> por el maestro.');
@@ -521,7 +571,7 @@ function renderMaestro(data){
     for(let i=0;i<mx;i++){dots+=`<div class="idot ${r&&i===ni-1?'ok':'f'}"></div>`;}
     if(ni>8)dots+=`<span style="font-size:10px;color:var(--text-muted)">+${ni-8}</span>`;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-muted)">${toR(p.id)}</td><td style="font-size:17px">${p.icono}</td><td style="font-family:'IM Fell English SC',serif;font-size:13px">${p.titulo}</td><td>${r?'<span class="badge ok">✦ SUPERADA</span>':ni>0?'<span class="badge pen">⟳ EN CURSO</span>':'<span class="badge lck">— PENDIENTE</span>'}</td><td><div class="dot-bar">${dots||'<span style="font-size:10px;color:var(--text-muted)">—</span>'}${ni>0?`<span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);margin-left:4px">${ni}</span>`:''}</div></td><td><span style="font-family:'Cinzel',serif;font-size:11px;color:${r?'var(--green-br)':ni>0?'var(--amber-lt)':'var(--text-muted)'}">${ni>0?ni+(ni===1?' intento':' intentos'):'—'}</span>${nfa>0?`<br><span style="font-size:10px;color:var(--red-lt);font-style:italic">${nfa} fallo(s)</span>`:''}</td>`;
+    tr.innerHTML=`<td style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-muted)">${toR(p.id)}</td><td style="font-size:17px">${p.icono}</td><td style="font-family:'IM Fell English SC',serif;font-size:13px">${p.titulo}</td><td>${r?'<span class="badge ok">✦ SUPERADA</span>':ni>0?'<span class="badge pen">⟳ EN CURSO</span>':'<span class="badge lck">— PENDIENTE</span>'}</td><td><span class="resp-badge">${p.respuesta||'—'}</span></td><td><div class="dot-bar">${dots||'<span style="font-size:10px;color:var(--text-muted)">—</span>'}${ni>0?`<span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);margin-left:4px">${ni}</span>`:''}</div></td><td><span style="font-family:'Cinzel',serif;font-size:11px;color:${r?'var(--green-br)':ni>0?'var(--amber-lt)':'var(--text-muted)'}">${ni>0?ni+(ni===1?' intento':' intentos'):'—'}</span>${nfa>0?`<br><span style="font-size:10px;color:var(--red-lt);font-style:italic">${nfa} fallo(s)</span>`:''}</td>`;
     tbody.appendChild(tr);
   });
   if(nOk===PRUEBAS.length)document.getElementById('final-banner').classList.add('show');
@@ -554,16 +604,16 @@ function setConn(st){
 
 // ── ARRANQUE ──
 document.getElementById('hora-ini').textContent=hora();
-const saved=localStorage.getItem(STORE_KEY);
-if(saved){
-  try{
-    const cfg=JSON.parse(saved);
-    document.getElementById('setup-overlay').classList.add('hidden');
-    conectar(cfg);
-  }catch(e){localStorage.removeItem(STORE_KEY);}
-}else{
-  // Pre-rellenar campos si los hay
-}
+// Config fija — no necesita formulario
+document.getElementById('setup-overlay').classList.add('hidden');
+conectar({
+  apiKey:"AIzaSyD6WPMALoBWUPPYAkbT0MXkeUtT6tVT7F0",
+  authDomain:"escaperoomprueba.firebaseapp.com",
+  projectId:"escaperoomprueba",
+  storageBucket:"escaperoomprueba.appspot.com",
+  messagingSenderId:"370330539854",
+  appId:"1:370330539854:web:0bb275c4e1a4b1fdb8301f"
+});
 </script>
 </body>
 </html>

@@ -67,6 +67,16 @@ h1{font-family:'IM Fell English SC',serif;font-size:clamp(22px,4.5vw,48px);color
 .crono-fill.critico{background:var(--blood);}
 .crono-sep{width:60%;margin:16px auto;height:1px;background:linear-gradient(90deg,transparent,var(--parchment-dkr),transparent);}
 
+/* PAUSA */
+#pantalla-pausa{display:none;text-align:center;padding:36px 20px 40px;animation:pausaIn 0.4s ease;}
+#pantalla-pausa.show{display:block;}
+@keyframes pausaIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
+.pausa-icono{font-size:54px;margin-bottom:16px;animation:pausaPulse 2s ease-in-out infinite;}
+@keyframes pausaPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:0.8}}
+.pausa-titulo{font-family:'IM Fell English SC',serif;font-size:clamp(22px,4vw,36px);color:var(--ink);margin-bottom:10px;}
+.pausa-texto{font-size:14px;color:var(--ink-faded);font-style:italic;line-height:1.7;max-width:400px;margin:0 auto;}
+.pausa-sello{display:inline-block;border:2px dashed var(--parchment-dkr);padding:10px 24px;margin-top:20px;color:var(--ink-ghost);font-family:'Cinzel',serif;font-size:9px;letter-spacing:4px;text-transform:uppercase;}
+
 /* MENSAJE MAESTRO */
 #msg-maestro-wrap{display:none;margin-bottom:18px;animation:msgIn 0.5s cubic-bezier(.34,1.56,.64,1);}
 #msg-maestro-wrap.show{display:block;}
@@ -238,6 +248,15 @@ h1{font-family:'IM Fell English SC',serif;font-size:clamp(22px,4.5vw,48px);color
       <div class="crono-barra"><div class="crono-fill" id="crono-fill"></div></div>
     </div>
     <div class="crono-sep"></div>
+
+    <!-- PAUSA -->
+    <div id="pantalla-pausa">
+      <div class="pausa-icono">⏸</div>
+      <div class="pausa-titulo">Partida en pausa</div>
+      <p class="pausa-texto">El Maestro del Camino ha detenido el tiempo momentáneamente.<br><em>Aguardad, peregrinos. El Camino se reanudará en breve.</em></p>
+      <div class="pausa-sello">⚜ Tiempo detenido ⚜</div>
+    </div>
+
     <!-- MENSAJE MAESTRO -->
     <div id="msg-maestro-wrap">
       <div class="msg-box" id="msg-box">
@@ -289,15 +308,15 @@ import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const PRUEBAS=[
-  {id:1,titulo:"La Concha de Piedra",icono:"🐚",inst:"Con las dos tablas de símbolos del sobre nº1, descifrad el mensaje tallado en la piedra del pórtico.",respuesta:"CONCHA",ayuda:"Los símbolos se leen de izquierda a derecha.",cel:"¡La primera concha del Camino brilla en vuestros pies! Drake aún no ha llegado."},
-  {id:2,titulo:"El Códice del Monje",icono:"📜",inst:"El pergamino del sobre nº2 contiene un códice encriptado. Usad la rueda de cifrado para obtener la clave.",respuesta:"PERDON",ayuda:"La rueda gira tres posiciones hacia la derecha.",cel:"El monje asiente en silencio. Habéis leído su códice correctamente."},
-  {id:3,titulo:"La Cruz de los Caídos",icono:"✝️",inst:"Unid los cuatro fragmentos de cruz en el orden correcto. Las letras de los bordes formarán la clave.",respuesta:"GALICIA",ayuda:"El fragmento mayor va siempre en la posición superior.",cel:"La cruz señala el norte. El Camino se ilumina ante vosotros."},
-  {id:4,titulo:"El Mapa del Corsario",icono:"🗺️",inst:"Identificad los tres puertos marcados con calavera y sumad sus números de referencia.",respuesta:"DRAKE",ayuda:"Los números de referencia están en las esquinas de cada puerto.",cel:"¡Habéis descubierto la ruta del corsario! Podréis adelantaros."},
-  {id:5,titulo:"El Sello del Obispo",icono:"⚜️",inst:"Solo uno de los cuatro sellos del sobre nº5 es auténtico. Leed la inscripción latina del sello verdadero.",respuesta:"IACOBVS",ayuda:"El sello auténtico tiene doce perlas en el borde exterior.",cel:"El Obispo inclina su cabeza. El sello es auténtico."},
-  {id:6,titulo:"Los Dados del Tabernero",icono:"🎲",inst:"Tirad los 5 dados y aplicad la fórmula del papel azul: (A×B) − (C+D+E). El resultado es la clave.",respuesta:"TABERNA",ayuda:"La fórmula siempre da un número entre 1 y 30.",cel:"El tabernero os guiña el ojo y señala la puerta trasera."},
-  {id:7,titulo:"La Campana Muda",icono:"🔔",inst:"Completad la partitura con las fichas de notas y leed las iniciales de las notas completadas en orden.",respuesta:"BOTAFUMEIRO",ayuda:"Las notas medievales son: Do Re Mi Fa Sol La Si.",cel:"La campana repica por primera vez en siglos."},
-  {id:8,titulo:"El Espejo del Rey",icono:"🪞",inst:"Colocad el espejo sobre el mapa cifrado del sobre nº8. El reflejo revelará un texto oculto. Copiad las tres palabras.",respuesta:"COMPOSTELA",ayuda:"El espejo debe colocarse en el borde izquierdo del mapa.",cel:"El espejo nunca miente. La ciudad sagrada os espera."},
-  {id:9,titulo:"La Tumba Sin Nombre",icono:"⚰️",inst:"Nueve lápidas, nueve fechas. Usad la tabla cronológica del sobre nº9 para identificar al guardián del Apóstol.",respuesta:"SANTIAGO",ayuda:"Buscáis el sepulcro del año MCCCXII.",cel:"¡Lo habéis encontrado! El guardián descansa en paz. Los restos están a salvo."}
+  {id:1,titulo:"La Concha de Piedra",icono:"🐚",inst:"Con las dos tablas de símbolos del sobre nº1, descifrad el mensaje tallado en la piedra del pórtico.",respuesta:"1234",ayuda:"Los símbolos se leen de izquierda a derecha.",cel:"¡La primera concha del Camino brilla en vuestros pies! Drake aún no ha llegado."},
+  {id:2,titulo:"El Códice del Monje",icono:"📜",inst:"El pergamino del sobre nº2 contiene un códice encriptado. Usad la rueda de cifrado para obtener la clave.",respuesta:"1234",ayuda:"La rueda gira tres posiciones hacia la derecha.",cel:"El monje asiente en silencio. Habéis leído su códice correctamente."},
+  {id:3,titulo:"La Cruz de los Caídos",icono:"✝️",inst:"Unid los cuatro fragmentos de cruz en el orden correcto. Las letras de los bordes formarán la clave.",respuesta:"1234",ayuda:"El fragmento mayor va siempre en la posición superior.",cel:"La cruz señala el norte. El Camino se ilumina ante vosotros."},
+  {id:4,titulo:"El Mapa del Corsario",icono:"🗺️",inst:"Identificad los tres puertos marcados con calavera y sumad sus números de referencia.",respuesta:"1234",ayuda:"Los números de referencia están en las esquinas de cada puerto.",cel:"¡Habéis descubierto la ruta del corsario! Podréis adelantaros."},
+  {id:5,titulo:"El Sello del Obispo",icono:"⚜️",inst:"Solo uno de los cuatro sellos del sobre nº5 es auténtico. Leed la inscripción latina del sello verdadero.",respuesta:"1234",ayuda:"El sello auténtico tiene doce perlas en el borde exterior.",cel:"El Obispo inclina su cabeza. El sello es auténtico."},
+  {id:6,titulo:"Los Dados del Tabernero",icono:"🎲",inst:"Tirad los 5 dados y aplicad la fórmula del papel azul: (A×B) − (C+D+E). El resultado es la clave.",respuesta:"1234",ayuda:"La fórmula siempre da un número entre 1 y 30.",cel:"El tabernero os guiña el ojo y señala la puerta trasera."},
+  {id:7,titulo:"La Campana Muda",icono:"🔔",inst:"Completad la partitura con las fichas de notas y leed las iniciales de las notas completadas en orden.",respuesta:"1234",ayuda:"Las notas medievales son: Do Re Mi Fa Sol La Si.",cel:"La campana repica por primera vez en siglos."},
+  {id:8,titulo:"El Espejo del Rey",icono:"🪞",inst:"Colocad el espejo sobre el mapa cifrado del sobre nº8. El reflejo revelará un texto oculto. Copiad las tres palabras.",respuesta:"1234",ayuda:"El espejo debe colocarse en el borde izquierdo del mapa.",cel:"El espejo nunca miente. La ciudad sagrada os espera."},
+  {id:9,titulo:"La Tumba Sin Nombre",icono:"⚰️",inst:"Nueve lápidas, nueve fechas. Usad la tabla cronológica del sobre nº9 para identificar al guardián del Apóstol.",respuesta:"1234",ayuda:"Buscáis el sepulcro del año MCCCXII.",cel:"¡Lo habéis encontrado! El guardián descansa en paz. Los restos están a salvo."}
 ];
 const DURACION=45*60;
 const STORE_KEY="aventura_firebase_cfg";
@@ -306,7 +325,7 @@ const SESION="partida_activa";
 let db=null, unsubscribe=null;
 let estado={resueltas:[],prueba_activa:null};
 let intentosActuales=0, intentosPorPrueba={};
-let juegoActivo=false, tiempoAgotado=false;
+let juegoActivo=false, tiempoAgotado=false, pausado=false;
 let tiempoInicio=null, cronoInterval=null;
 let ultimoMsgTs=0;
 
@@ -364,6 +383,8 @@ function iniciarListener(){
       // Maestro reseteó
       location.reload();
     }
+    // Pausa
+    if(d.pausado !== undefined) actualizarPausa(d.pausado, d.inicio_ts);
     // Mensaje maestro
     actualizarMsg(d.mensaje_maestro||'', d.mensaje_ts||0);
     render();
@@ -383,7 +404,7 @@ function iniciarCrono(ts){
   cronoInterval=setInterval(tick,500); tick();
 }
 function tick(){
-  if(!tiempoInicio)return;
+  if(!tiempoInicio||pausado)return;
   const restante=Math.max(0,DURACION-Math.floor((Date.now()-tiempoInicio)/1000));
   const pct=restante/DURACION;
   const txt=String(Math.floor(restante/60)).padStart(2,'0')+':'+String(restante%60).padStart(2,'0');
@@ -407,6 +428,30 @@ function mostrarJuego(){
 }
 
 // ── MENSAJE MAESTRO ──
+function actualizarPausa(estaPausado, inicioTs){
+  const pantallaPausa = document.getElementById('pantalla-pausa');
+  const contenidoNormal = document.querySelectorAll(
+    '#mapa-prog, .prog-block, #pruebas-grid, #panel-entrada, .warning-banner, #pista-final, #fin-tiempo, #msg-maestro-wrap'
+  );
+  if(estaPausado && !tiempoAgotado){
+    pausado = true;
+    clearInterval(cronoInterval);
+    pantallaPausa.classList.add('show');
+    contenidoNormal.forEach(el=>{ el.style.display='none'; });
+  } else if(!estaPausado && pausado){
+    pausado = false;
+    pantallaPausa.classList.remove('show');
+    contenidoNormal.forEach(el=>{ el.style.display=''; });
+    // Reanudar crono con el nuevo inicio_ts (ya ajustado por el maestro)
+    if(inicioTs && juegoActivo){
+      const ts = typeof inicioTs==='object'?(inicioTs.toMillis?inicioTs.toMillis():Date.now()):inicioTs;
+      tiempoInicio = ts;
+      if(cronoInterval) clearInterval(cronoInterval);
+      cronoInterval = setInterval(tick, 500); tick();
+    }
+  }
+}
+
 function actualizarMsg(texto,ts){
   const wrap=document.getElementById('msg-maestro-wrap');
   const box=document.getElementById('msg-box');
@@ -527,14 +572,16 @@ function confetti(){
 }
 
 // ── ARRANQUE ──
-const saved=localStorage.getItem(STORE_KEY);
-if(saved){
-  try{
-    const cfg=JSON.parse(saved);
-    document.getElementById('setup-overlay').classList.add('hidden');
-    conectar(cfg);
-  }catch(e){localStorage.removeItem(STORE_KEY);}
-}
+// Config fija — no necesita formulario
+document.getElementById('setup-overlay').classList.add('hidden');
+conectar({
+  apiKey:"AIzaSyD6WPMALoBWUPPYAkbT0MXkeUtT6tVT7F0",
+  authDomain:"escaperoomprueba.firebaseapp.com",
+  projectId:"escaperoomprueba",
+  storageBucket:"escaperoomprueba.appspot.com",
+  messagingSenderId:"370330539854",
+  appId:"1:370330539854:web:0bb275c4e1a4b1fdb8301f"
+});
 </script>
 </body>
 </html>
