@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Maestro — Aventura en el Camino</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0D0B06;--bg2:#14110A;--bg3:#1C1710;--border:#3A2E1A;--border-lt:#5C4A28;--gold:#C9A84C;--gold-dim:#8B6914;--gold-pale:#F5E6B8;--text:#E8D9A8;--text-dim:#8A7550;--text-muted:#5C4A28;--green:#2C4A2E;--green-lt:#3D6B40;--green-br:#52A869;--red:#7A1414;--red-lt:#A01E1E;--amber:#8B5E14;--amber-lt:#C4840B;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);font-family:'IM Fell English',serif;color:var(--text);min-height:100vh;background-image:repeating-linear-gradient(92deg,transparent 0,rgba(201,168,76,0.03) 1px,transparent 2px,transparent 80px);}
+
+/* SETUP */
+#setup-overlay{position:fixed;inset:0;background:rgba(5,4,2,0.97);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;}
+#setup-overlay.hidden{display:none;}
+.setup-box{background:var(--bg2);border:2px solid var(--gold-dim);padding:36px 40px;max-width:540px;width:100%;}
+.setup-title{font-family:'IM Fell English SC',serif;font-size:26px;color:var(--gold);text-align:center;margin-bottom:6px;}
+.setup-sub{font-size:13px;color:var(--text-dim);font-style:italic;text-align:center;margin-bottom:28px;line-height:1.5;}
+.setup-field{margin-bottom:14px;}
+.setup-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:5px;}
+.setup-input{width:100%;background:var(--bg3);border:1px solid var(--border-lt);padding:10px 14px;font-family:'IM Fell English',serif;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;}
+.setup-input:focus{border-color:var(--gold-dim);}
+.setup-input::placeholder{color:var(--text-muted);font-style:italic;}
+.setup-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.setup-btn{width:100%;margin-top:20px;background:var(--gold-dim);color:var(--bg);border:none;padding:13px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;cursor:pointer;transition:background 0.2s;text-transform:uppercase;}
+.setup-btn:hover{background:var(--gold);}
+.setup-error{color:var(--red-lt);font-size:12px;font-style:italic;text-align:center;margin-top:10px;min-height:18px;}
+.setup-note{font-size:11px;color:var(--text-muted);font-style:italic;text-align:center;margin-top:12px;line-height:1.5;}
+.setup-note a{color:var(--gold-dim);}
+
+/* HEADER */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:50;}
+.h-left .eyebrow{font-family:'Cinzel',serif;font-size:8px;letter-spacing:4px;color:var(--text-muted);}
+.h-left .title{font-family:'IM Fell English SC',serif;font-size:clamp(15px,2.2vw,24px);color:var(--gold);}
+.h-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.conn-badge{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);padding:5px 11px;}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#444;transition:all 0.4s;}
+.conn-dot.ok{background:var(--green-br);box-shadow:0 0 7px var(--green-br);}
+.conn-dot.err{background:var(--red-lt);}
+.conn-dot.wait{background:var(--amber-lt);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.conn-text{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--text-dim);}
+.live-ind{display:none;align-items:center;gap:5px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--green-br);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green-br);animation:lp 1.5s ease-in-out infinite;}
+@keyframes lp{0%,100%{transform:scale(1)}50%{transform:scale(1.5);opacity:0.6}}
+.btn-cfg{background:none;border:1px solid var(--border);color:var(--text-muted);font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;padding:5px 10px;cursor:pointer;}
+.btn-cfg:hover{border-color:var(--gold-dim);color:var(--gold);}
+
+/* MAIN */
+main{padding:22px 22px 50px;max-width:1200px;margin:0 auto;}
+
+/* CRONO BLOQUE */
+.crono-bloque{background:var(--bg2);border:1px solid var(--border);padding:22px 26px;margin-bottom:18px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;}
+@media(max-width:650px){.crono-bloque{grid-template-columns:1fr;}}
+.crono-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:4px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;}
+.crono-display{font-family:'IM Fell English SC',serif;font-size:clamp(50px,9vw,84px);color:var(--gold);letter-spacing:6px;line-height:1;transition:color 0.4s;}
+.crono-display.urgente{color:var(--amber-lt);animation:cu 1s ease-in-out infinite;}
+.crono-display.critico{color:var(--red-lt);animation:cc 0.5s ease-in-out infinite;}
+@keyframes cu{0%,100%{opacity:1}50%{opacity:0.6}}
+@keyframes cc{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.75;transform:scale(1.03)}}
+.crono-barra{height:8px;background:var(--bg3);border:1px solid var(--border);margin-top:10px;overflow:hidden;}
+.crono-fill{height:100%;width:100%;background:linear-gradient(90deg,var(--green-lt),var(--gold));transition:width 1s linear,background 0.5s;}
+.crono-fill.urgente{background:linear-gradient(90deg,var(--amber),var(--red-lt));}
+.crono-fill.critico{background:var(--red-lt);}
+.crono-right{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:200px;}
+.estado-badge{font-family:'IM Fell English SC',serif;font-size:15px;padding:7px 18px;border:1px solid var(--border);color:var(--text-dim);text-align:center;width:100%;}
+.estado-badge.activo{border-color:var(--green-lt);color:var(--green-br);background:rgba(44,74,46,0.15);}
+.estado-badge.agotado{border-color:var(--red-lt);color:var(--red-lt);background:rgba(122,20,20,0.15);}
+.estado-badge.urgente-b{border-color:var(--amber-lt);color:var(--amber-lt);}
+.btn-group{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;width:100%;}
+.btn-m{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;padding:8px 16px;cursor:pointer;border:none;transition:all 0.2s;text-transform:uppercase;}
+.btn-iniciar{background:var(--green);color:var(--gold-pale);border:1px solid var(--green-lt);}
+.btn-iniciar:hover:not(:disabled){background:var(--green-lt);}
+.btn-iniciar:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-danger{background:none;border:1px solid var(--border);color:var(--text-muted);}
+.btn-danger:hover{border-color:var(--red-lt);color:var(--red-lt);}
+.btn-pausa{background:var(--amber);color:var(--gold-pale);border:1px solid var(--amber-lt);}
+.btn-pausa:hover:not(:disabled){background:var(--amber-lt);}
+.btn-pausa.pausado{background:var(--green);color:var(--gold-pale);border:1px solid var(--green-lt);}
+.btn-pausa.pausado:hover:not(:disabled){background:var(--green-lt);}
+.btn-pausa:disabled{opacity:0.35;cursor:not-allowed;}
+.pausa-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:3px;color:var(--text-muted);text-align:center;margin-top:6px;min-height:14px;}
+
+/* AJUSTE TIEMPO */
+.tiempo-ajuste{border-top:1px solid var(--border);padding-top:10px;width:100%;}
+.tiempo-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:3px;color:var(--text-muted);text-align:center;margin-bottom:7px;text-transform:uppercase;}
+.tiempo-btns{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+.btn-t{font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;padding:6px 10px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);transition:all 0.2s;min-width:46px;text-align:center;}
+.btn-t.suma{border-color:var(--green-lt);color:var(--green-br);}
+.btn-t.suma:hover:not(:disabled){background:rgba(44,74,46,0.3);}
+.btn-t.resta{border-color:var(--red-lt);color:var(--red-lt);}
+.btn-t.resta:hover:not(:disabled){background:rgba(122,20,20,0.2);}
+.btn-t:disabled{opacity:0.3;cursor:not-allowed;}
+.flash-crono{animation:flashC 0.5s ease;}
+@keyframes flashC{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+
+/* MSG PANEL */
+.msg-panel{background:var(--bg2);border:1px solid var(--border);padding:18px 20px;margin-bottom:18px;}
+.sec-title{font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;color:var(--text-dim);text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:14px;}
+.msg-presets{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px;}
+.btn-preset{font-family:'IM Fell English',serif;font-style:italic;font-size:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);padding:5px 11px;cursor:pointer;transition:all 0.2s;}
+.btn-preset:hover{border-color:var(--gold-dim);color:var(--gold);}
+.msg-fila{display:flex;gap:7px;}
+.msg-input{flex:1;background:var(--bg3);border:1px solid var(--border-lt);padding:10px 13px;font-family:'IM Fell English',serif;font-style:italic;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;}
+.msg-input:focus{border-color:var(--gold-dim);}
+.msg-input::placeholder{color:var(--text-muted);}
+.btn-enviar{background:var(--gold-dim);color:var(--bg);border:none;padding:10px 16px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;cursor:pointer;flex-shrink:0;transition:background 0.2s;}
+.btn-enviar:hover{background:var(--gold);}
+.btn-borrar{background:none;border:1px solid var(--border);color:var(--text-muted);padding:10px 11px;font-size:13px;cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+.btn-borrar:hover{border-color:var(--red-lt);color:var(--red-lt);}
+.msg-ok{margin-top:7px;font-size:11px;color:var(--green-br);font-style:italic;height:16px;opacity:0;transition:opacity 0.3s;}
+.msg-ok.show{opacity:1;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px;}
+@media(max-width:700px){.stats-row{grid-template-columns:1fr 1fr;}}
+.stat-card{background:var(--bg2);border:1px solid var(--border);padding:14px 16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold-dim);}
+.stat-card.v::before{background:var(--green-lt);}
+.stat-card.r::before{background:var(--red-lt);}
+.stat-card.a::before{background:var(--amber-lt);}
+.stat-lbl{font-family:'Cinzel',serif;font-size:8px;letter-spacing:3px;color:var(--text-muted);margin-bottom:5px;text-transform:uppercase;}
+.stat-val{font-family:'IM Fell English SC',serif;font-size:clamp(24px,3.5vw,38px);color:var(--gold);line-height:1;}
+.stat-card.v .stat-val{color:var(--green-br);}
+.stat-card.r .stat-val{color:var(--red-lt);}
+.stat-card.a .stat-val{color:var(--amber-lt);}
+.stat-sub{font-size:10px;color:var(--text-muted);font-style:italic;margin-top:3px;}
+
+/* CAMINO */
+.camino-wrap{margin-bottom:18px;}
+.camino-track{height:13px;background:var(--bg3);border:1px solid var(--border);overflow:hidden;}
+.camino-fill{height:100%;background:repeating-linear-gradient(45deg,var(--green) 0,var(--green) 7px,var(--green-lt) 7px,var(--green-lt) 14px);width:0%;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.camino-pts{display:flex;justify-content:space-between;margin-top:7px;flex-wrap:wrap;gap:4px;}
+.camino-pt{width:27px;height:27px;border-radius:50%;border:2px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:9px;color:var(--text-muted);transition:all 0.5s;position:relative;cursor:default;}
+.camino-pt[title]:hover::after{content:attr(title);position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);color:var(--text);font-size:10px;padding:3px 8px;white-space:nowrap;z-index:10;font-family:'IM Fell English',serif;}
+.camino-pt.done{background:var(--green);border-color:var(--green-lt);color:var(--text);box-shadow:0 0 9px rgba(44,74,46,0.5);}
+.camino-pt.final{width:34px;height:34px;font-size:15px;border-color:var(--red);color:var(--red-lt);}
+.camino-pt.final.done{background:var(--red);border-color:var(--red-lt);color:var(--text);box-shadow:0 0 13px rgba(122,20,20,0.6);}
+
+/* TABLA */
+.tabla-wrap{margin-bottom:18px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:500px;}
+thead th{background:var(--bg3);border-bottom:1px solid var(--border);font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;padding:9px 13px;text-align:left;}
+tbody tr{border-bottom:1px solid rgba(58,46,26,0.5);transition:background 0.2s;}
+tbody tr:hover{background:rgba(201,168,76,0.03);}
+tbody td{padding:11px 13px;font-size:13px;vertical-align:middle;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;}
+.badge.ok{background:rgba(44,74,46,0.3);border:1px solid var(--green-lt);color:var(--green-br);}
+.badge.pen{background:rgba(139,94,20,0.2);border:1px solid var(--amber);color:var(--amber-lt);}
+.badge.lck{background:rgba(30,25,15,0.5);border:1px solid var(--border);color:var(--text-muted);}
+.dot-bar{display:flex;gap:4px;align-items:center;}
+.idot{width:9px;height:9px;border-radius:2px;background:var(--border);}
+.idot.f{background:var(--red-lt);}
+.idot.ok{background:var(--green-lt);}
+
+/* LOG */
+.log-wrap{background:var(--bg2);border:1px solid var(--border);}
+.log-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 15px;border-bottom:1px solid var(--border);}
+.log-list{max-height:210px;overflow-y:auto;padding:6px 0;}
+.log-list::-webkit-scrollbar{width:3px;}
+.log-list::-webkit-scrollbar-thumb{background:var(--border);}
+.log-item{display:flex;align-items:flex-start;gap:9px;padding:6px 15px;border-bottom:1px solid rgba(58,46,26,0.25);animation:li 0.3s ease;}
+@keyframes li{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.ldot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.ldot.ok{background:var(--green-br);}
+.ldot.fail{background:var(--red-lt);}
+.ldot.info{background:var(--gold-dim);}
+.ltext{font-size:12px;color:var(--text-dim);line-height:1.4;}
+.ltext strong{color:var(--text);}
+.lhora{font-family:'Cinzel',serif;font-size:9px;color:var(--text-muted);margin-left:auto;flex-shrink:0;}
+
+/* FINAL */
+.final-banner{display:none;background:rgba(122,20,20,0.12);border:2px solid var(--red-lt);padding:20px;margin-bottom:18px;text-align:center;animation:fb 0.8s ease;}
+@keyframes fb{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:none}}
+.final-banner.show{display:block;}
+.final-titulo{font-family:'IM Fell English SC',serif;font-size:clamp(18px,2.8vw,28px);color:var(--red-lt);margin-bottom:6px;}
+.final-texto{font-size:13px;color:var(--text-dim);font-style:italic;}
+.resp-badge{display:inline-block;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;padding:3px 10px;background:rgba(139,105,20,0.15);border:1px solid var(--gold-dim);color:var(--gold);}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP OVERLAY ══ -->
+<div id="setup-overlay">
+  <div class="setup-box">
+    <div style="text-align:center;font-size:36px;margin-bottom:12px">⚜</div>
+    <div style="font-family:'IM Fell English SC',serif;font-size:24px;color:var(--gold);text-align:center;margin-bottom:6px">Configurar Firebase</div>
+    <div style="font-size:13px;color:var(--text-dim);font-style:italic;text-align:center;margin-bottom:24px;line-height:1.6">
+      Introduce los datos de tu proyecto Firebase.<br>
+      Los encontrarás en <strong style="color:var(--text)">console.firebase.google.com</strong> → tu proyecto → ⚙️ → Aplicaciones web.
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--text-muted);display:block;margin-bottom:5px">API KEY</label>
+      <input id="cfg-apiKey" class="setup-input" placeholder="AIzaSy..." style="width:100%;background:var(--bg3);border:1px solid var(--border-lt);padding:10px 13px;font-family:'IM Fell English',serif;font-size:14px;color:var(--text);outline:none;">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--text-muted);display:block;margin-bottom:5px">PROJECT ID</label>
+      <input id="cfg-projectId" class="setup-input" placeholder="mi-proyecto-firebase" style="width:100%;background:var(--bg3);border:1px solid var(--border-lt);padding:10px 13px;font-family:'IM Fell English',serif;font-size:14px;color:var(--text);outline:none;">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px">
+      <div>
+        <label style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--text-muted);display:block;margin-bottom:5px">APP ID</label>
+        <input id="cfg-appId" class="setup-input" placeholder="1:123:web:abc" style="width:100%;background:var(--bg3);border:1px solid var(--border-lt);padding:10px 13px;font-family:'IM Fell English',serif;font-size:13px;color:var(--text);outline:none;">
+      </div>
+      <div>
+        <label style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--text-muted);display:block;margin-bottom:5px">SENDER ID</label>
+        <input id="cfg-senderId" class="setup-input" placeholder="123456789" style="width:100%;background:var(--bg3);border:1px solid var(--border-lt);padding:10px 13px;font-family:'IM Fell English',serif;font-size:13px;color:var(--text);outline:none;">
+      </div>
+    </div>
+    <button onclick="guardarConfig()" style="width:100%;background:var(--gold-dim);color:var(--bg);border:none;padding:13px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;cursor:pointer;text-transform:uppercase;">Guardar y Conectar ⚜</button>
+    <div id="cfg-error" style="color:var(--red-lt);font-size:12px;font-style:italic;text-align:center;margin-top:10px;min-height:18px;"></div>
+    <div style="font-size:11px;color:var(--text-muted);font-style:italic;text-align:center;margin-top:12px;line-height:1.5">
+      Los datos se guardan en este navegador. No hacen falta más veces.<br>
+      Reglas de Firestore: <strong style="color:var(--text)">allow read, write: if true;</strong>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="h-left">
+    <div class="eyebrow">Anno Domini MDLXXXIX — Panel Maestro</div>
+    <div class="title">⚜ Aventura en el Camino</div>
+  </div>
+  <div class="h-right">
+    <div class="live-ind" id="live-ind"><div class="live-dot"></div> EN VIVO</div>
+    <div class="conn-badge"><div class="conn-dot wait" id="conn-dot"></div><span class="conn-text" id="conn-text">Conectando...</span></div>
+    <button class="btn-cfg" onclick="abrirConfig()">⚙ Config Firebase</button>
+  </div>
+</header>
+
+<main>
+  <div class="final-banner" id="final-banner">
+    <div class="final-titulo">🏆 ¡MISIÓN COMPLETADA! 🏆</div>
+    <div class="final-texto">El grupo ha superado las 9 pruebas. Los restos del Apóstol están a salvo de Francis Drake.</div>
+  </div>
+
+  <!-- CRONO -->
+  <div class="crono-bloque">
+    <div>
+      <div class="crono-label">⌛ Cuenta atrás — 45 minutos</div>
+      <div class="crono-display" id="crono-m">45:00</div>
+      <div class="crono-barra"><div class="crono-fill" id="crono-fill"></div></div>
+    </div>
+    <div class="crono-right">
+      <div class="crono-label" style="text-align:center">Estado de partida</div>
+      <span class="estado-badge" id="estado-badge">⏸ Sin iniciar</span>
+      <div class="btn-group">
+        <button class="btn-m btn-iniciar" id="btn-iniciar" onclick="iniciarPartida()">▶ Iniciar</button>
+        <button class="btn-m btn-pausa" id="btn-pausa" onclick="pausarReanudar()" disabled>⏸ Pausar</button>
+        <button class="btn-m btn-danger" onclick="resetearPartida()">↺ Resetear</button>
+      </div>
+      <div class="pausa-label" id="pausa-label"></div>
+
+      </div>
+      <div class="tiempo-ajuste">
+        <div class="tiempo-label">Ajustar tiempo</div>
+        <div class="tiempo-btns">
+          <button class="btn-t suma" id="bt5" onclick="ajustarTiempo(5)" disabled>+5'</button>
+          <button class="btn-t suma" id="bt2" onclick="ajustarTiempo(2)" disabled>+2'</button>
+          <button class="btn-t suma" id="bt1" onclick="ajustarTiempo(1)" disabled>+1'</button>
+          <button class="btn-t resta" id="bm1" onclick="ajustarTiempo(-1)" disabled>−1'</button>
+          <button class="btn-t resta" id="bm2" onclick="ajustarTiempo(-2)" disabled>−2'</button>
+          <button class="btn-t resta" id="bm5" onclick="ajustarTiempo(-5)" disabled>−5'</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENSAJES -->
+  <div class="msg-panel">
+    <div class="sec-title">📨 Enviar mensaje / pista al peregrino</div>
+    <div class="msg-presets">
+      <button class="btn-preset" onclick="preset('¡Os queda poco tiempo! Drake está muy cerca.')">⚠ Urgencia</button>
+      <button class="btn-preset" onclick="preset('Buen trabajo. Seguid adelante con valor.')">✦ Ánimo</button>
+      <button class="btn-preset" onclick="preset('Revisad bien todos los símbolos del sobre.')">🔍 Símbolos</button>
+      <button class="btn-preset" onclick="preset('La respuesta tiene exactamente 7 letras.')">💡 Longitud</button>
+      <button class="btn-preset" onclick="preset('Prestad atención al reverso del pergamino.')">📜 Reverso</button>
+    </div>
+    <div class="msg-fila">
+      <input class="msg-input" id="msg-input" type="text" maxlength="140" placeholder="Escribe una pista o mensaje para el peregrino..."/>
+      <button class="btn-enviar" onclick="enviarMsg()">Enviar ⚜</button>
+      <button class="btn-borrar" onclick="borrarMsg()" title="Borrar mensaje del jugador">✕</button>
+    </div>
+    <div class="msg-ok" id="msg-ok">✦ Mensaje enviado al peregrino</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card v"><div class="stat-lbl">Pruebas superadas</div><div class="stat-val" id="s-ok">0</div><div class="stat-sub">de 9 totales</div></div>
+    <div class="stat-card r"><div class="stat-lbl">Pruebas pendientes</div><div class="stat-val" id="s-pend">9</div><div class="stat-sub">por resolver</div></div>
+    <div class="stat-card a"><div class="stat-lbl">Intentos fallidos</div><div class="stat-val" id="s-fallos">0</div><div class="stat-sub">en total</div></div>
+    <div class="stat-card"><div class="stat-lbl">Progreso</div><div class="stat-val" id="s-pct">0%</div><div class="stat-sub">completado</div></div>
+  </div>
+
+  <!-- CAMINO -->
+  <div class="camino-wrap">
+    <div class="sec-title">🗺 El Camino — Estado por etapas</div>
+    <div class="camino-track"><div class="camino-fill" id="camino-fill"></div></div>
+    <div class="camino-pts" id="camino-pts"></div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="tabla-wrap">
+    <div class="sec-title">📜 Detalle de cada prueba</div>
+    <table>
+      <thead><tr><th>#</th><th></th><th>Prueba</th><th>Estado</th><th style="color:var(--gold-dim)">Solución</th><th>Intentos</th><th>Total</th></tr></thead>
+      <tbody id="tabla-body"></tbody>
+    </table>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-wrap">
+    <div class="log-hdr">
+      <div class="sec-title" style="margin:0;border:none;padding:0">⏱ Actividad en tiempo real</div>
+      <button class="btn-m btn-danger" style="padding:4px 9px;font-size:8px" onclick="limpiarLog()">Limpiar</button>
+    </div>
+    <div class="log-list" id="log-list">
+      <div class="log-item"><div class="ldot info"></div><div class="ltext">Panel maestro iniciado.</div><div class="lhora" id="hora-ini"></div></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const PRUEBAS=[
+  {id:1,titulo:"La Concha de Piedra",icono:"🐚",respuesta:"1234"},
+  {id:2,titulo:"El Códice del Monje",icono:"📜",respuesta:"1234"},
+  {id:3,titulo:"La Cruz de los Caídos",icono:"✝️",respuesta:"1234"},
+  {id:4,titulo:"El Mapa del Corsario",icono:"🗺️",respuesta:"1234"},
+  {id:5,titulo:"El Sello del Obispo",icono:"⚜️",respuesta:"1234"},
+  {id:6,titulo:"Los Dados del Tabernero",icono:"🎲",respuesta:"1234"},
+  {id:7,titulo:"La Campana Muda",icono:"🔔",respuesta:"1234"},
+  {id:8,titulo:"El Espejo del Rey",icono:"🪞",respuesta:"1234"},
+  {id:9,titulo:"La Tumba Sin Nombre",icono:"⚰️",respuesta:"1234"}
+];
+const DURACION=45*60;
+const SESION="partida_activa";
+const STORE_KEY="aventura_firebase_cfg";
+
+let db=null, unsubscribe=null;
+let tiempoInicio=null, juegoActivo=false, tiempoAgotado=false, pausado=false;
+let cronoInterval=null, pausaTs=null, tiempoAcumuladoPausa=0;
+let ultimoEstado={resueltas:[],intentosPorPrueba:{}};
+
+// ── Utilidades ──
+function hora(){return new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function toR(n){const v=[1000,900,500,400,100,90,50,40,10,9,5,4,1],s=['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];let r='';for(let i=0;i<v.length;i++){while(n>=v[i]){r+=s[i];n-=v[i];}}return r;}
+
+// ── Config Firebase ──
+window.guardarConfig = function(){
+  const apiKey=document.getElementById('cfg-apiKey').value.trim();
+  const projectId=document.getElementById('cfg-projectId').value.trim();
+  const appId=document.getElementById('cfg-appId').value.trim();
+  const senderId=document.getElementById('cfg-senderId').value.trim();
+  const err=document.getElementById('cfg-error');
+  if(!apiKey||!projectId||!appId){err.textContent='Rellena al menos API Key, Project ID y App ID.';return;}
+  const cfg={apiKey,authDomain:`${projectId}.firebaseapp.com`,projectId,storageBucket:`${projectId}.appspot.com`,messagingSenderId:senderId,appId};
+  localStorage.setItem(STORE_KEY,JSON.stringify(cfg));
+  err.textContent='';
+  document.getElementById('setup-overlay').classList.add('hidden');
+  conectar(cfg);
+};
+
+window.abrirConfig = function(){
+  document.getElementById('setup-overlay').classList.remove('hidden');
+  const saved=localStorage.getItem(STORE_KEY);
+  if(saved){
+    const c=JSON.parse(saved);
+    document.getElementById('cfg-apiKey').value=c.apiKey||'';
+    document.getElementById('cfg-projectId').value=c.projectId||'';
+    document.getElementById('cfg-appId').value=c.appId||'';
+    document.getElementById('cfg-senderId').value=c.messagingSenderId||'';
+  }
+};
+
+// ── Conexión Firestore ──
+async function conectar(cfg){
+  try{
+    if(getApps().length>0){getApps().forEach(a=>deleteApp(a));}
+    const app=initializeApp(cfg);
+    db=getFirestore(app);
+    setConn('wait');
+    iniciarListener();
+  }catch(e){setConn('err');addLog('fail','Error al conectar Firebase: '+e.message);}
+}
+
+function iniciarListener(){
+  if(unsubscribe)unsubscribe();
+  const ref=doc(db,SESION,'datos');
+  unsubscribe=onSnapshot(ref,(snap)=>{
+    setConn('ok');
+    const data=snap.exists()?snap.data():{resueltas:[],intentosPorPrueba:{}};
+    detectarCambios(data);
+    renderMaestro(data);
+    if(data.inicio_ts&&!juegoActivo){
+      const ts=typeof data.inicio_ts==='object'?data.inicio_ts:data.inicio_ts;
+      iniciarCrono(ts);
+    }
+  },(err)=>{setConn('err');addLog('fail','Error Firestore: '+err.message);});
+  addLog('info','Conectado a Firestore. Esperando datos...');
+  renderMaestro({resueltas:[],intentosPorPrueba:{}});
+}
+
+// ── Guardar en Firestore ──
+async function guardar(campos){
+  if(!db)return;
+  const ref=doc(db,SESION,'datos');
+  await setDoc(ref,{...campos,ultima_actualizacion:serverTimestamp()},{merge:true});
+}
+
+// ── CRONÓMETRO ──
+function iniciarCrono(ts){
+  tiempoInicio=ts; juegoActivo=true; tiempoAgotado=false;
+  document.getElementById('btn-iniciar').disabled=true;
+  // Habilitar botones de ajuste
+  ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=false);
+  document.getElementById('btn-pausa').disabled=false;
+  if(cronoInterval)clearInterval(cronoInterval);
+  cronoInterval=setInterval(tick,500); tick();
+}
+
+function tick(){
+  if(!tiempoInicio)return;
+  const restante=Math.max(0,DURACION-Math.floor((Date.now()-tiempoInicio)/1000));
+  const pct=restante/DURACION;
+  const txt=String(Math.floor(restante/60)).padStart(2,'0')+':'+String(restante%60).padStart(2,'0');
+  const d=document.getElementById('crono-m');
+  const f=document.getElementById('crono-fill');
+  d.textContent=txt; f.style.width=(pct*100)+'%';
+  d.classList.remove('urgente','critico'); f.classList.remove('urgente','critico');
+  const badge=document.getElementById('estado-badge');
+  if(restante===0&&!tiempoAgotado){
+    tiempoAgotado=true; clearInterval(cronoInterval);
+    badge.className='estado-badge agotado'; badge.textContent='⚔ Tiempo agotado';
+    addLog('fail','<strong>¡Tiempo agotado!</strong> Drake ha llegado a la catedral.');
+    return;
+  }
+  if(restante<=60){d.classList.add('critico');f.classList.add('critico');badge.className='estado-badge agotado';badge.textContent='⚠ ¡Último minuto!';}
+  else if(restante<=600){d.classList.add('urgente');f.classList.add('urgente');badge.className='estado-badge urgente-b';badge.textContent='⚡ Urgente';}
+  else{badge.className='estado-badge activo';badge.textContent='▶ Partida en curso';}
+}
+
+// ── INICIAR PARTIDA ──
+window.pausarReanudar = async function(){
+  if(!juegoActivo||tiempoAgotado)return;
+  if(!pausado){
+    // PAUSAR: detener crono local y guardar timestamp de pausa
+    pausado=true;
+    pausaTs=Date.now();
+    clearInterval(cronoInterval);
+    // Guardar en Firestore que está pausado
+    await guardar({pausado:true, pausa_ts:pausaTs});
+    document.getElementById('btn-pausa').className='btn-m btn-pausa pausado';
+    document.getElementById('btn-pausa').textContent='▶ Reanudar';
+    document.getElementById('estado-badge').className='estado-badge urgente-b';
+    document.getElementById('estado-badge').textContent='⏸ Pausado';
+    document.getElementById('pausa-label').textContent='Cronómetro pausado';
+    // Deshabilitar ajustes de tiempo durante pausa
+    ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=true);
+    addLog('info','<strong>⏸ Partida pausada</strong> por el maestro.');
+  } else {
+    // REANUDAR: calcular cuánto tiempo estuvo pausado y adelantar inicio_ts
+    pausado=false;
+    const msPausado = Date.now() - pausaTs;
+    tiempoInicio += msPausado; // adelantar el origen → el tiempo restante no cambia
+    pausaTs=null;
+    await guardar({pausado:false, pausa_ts:null, inicio_ts:tiempoInicio});
+    document.getElementById('btn-pausa').className='btn-m btn-pausa';
+    document.getElementById('btn-pausa').textContent='⏸ Pausar';
+    document.getElementById('pausa-label').textContent='';
+    ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=false);
+    cronoInterval=setInterval(tick,500); tick();
+    addLog('info','<strong>▶ Partida reanudada</strong>. Tiempo recuperado correctamente.');
+  }
+};
+
+window.iniciarPartida = async function(){
+  if(!db){alert('Configura Firebase primero.');return;}
+  if(juegoActivo)return;
+  if(!confirm('¿Iniciar la partida? El cronómetro de 45 minutos arrancará para el jugador.'))return;
+  const tsMs=Date.now();
+  await guardar({inicio_ts:tsMs,resueltas:[],intentosPorPrueba:{},total_resueltas:0,mensaje_maestro:'',mensaje_ts:0});
+  addLog('info','<strong>Partida iniciada.</strong> Cronómetro en marcha.');
+};
+
+// ── AJUSTE DE TIEMPO ──
+// LÓGICA CORRECTA:
+// +N minutos = el jugador gana tiempo = adelantamos el inicio en el tiempo (inicio_ts se hace MÁS RECIENTE)
+//   → restante = DURACION - (ahora - inicio_ts)
+//   → para aumentar restante: reducir (ahora - inicio_ts) → aumentar inicio_ts
+//   → inicio_ts += N*60*1000
+// -N minutos = el jugador pierde tiempo = atrasamos el inicio
+//   → inicio_ts -= N*60*1000
+window.ajustarTiempo = async function(minutos){
+  if(!juegoActivo||!tiempoInicio){alert('La partida no está en curso.');return;}
+  // minutos > 0: sumar tiempo → inicio_ts sube (se hace más reciente → queda más tiempo)
+  // minutos < 0: restar tiempo → inicio_ts baja (se hace más antiguo → queda menos tiempo)
+  const nuevoTs = tiempoInicio + (minutos * 60 * 1000);
+  // Evitar que el nuevo ts sea mayor que ahora (tiempo negativo) o que deje menos de 0
+  const restanteNuevo = DURACION - Math.floor((Date.now() - nuevoTs)/1000);
+  if(restanteNuevo <= 0){alert('No se puede restar tanto tiempo: el cronómetro llegaría a 0.');return;}
+  if(restanteNuevo > DURACION*2){alert('No se puede sumar tanto tiempo.');return;}
+  tiempoInicio = nuevoTs;
+  await guardar({inicio_ts:nuevoTs});
+  const signo=minutos>0?'+':'-';
+  addLog('info',`<strong>Tiempo ajustado ${signo}${Math.abs(minutos)}'</strong> por el maestro. Nuevo restante: ${String(Math.floor(restanteNuevo/60)).padStart(2,'0')}:${String(restanteNuevo%60).padStart(2,'0')}`);
+  // Flash visual
+  const d=document.getElementById('crono-m');
+  d.classList.add('flash-crono');
+  setTimeout(()=>d.classList.remove('flash-crono'),600);
+};
+
+// ── RESET ──
+window.resetearPartida = async function(){
+  if(!db){alert('Configura Firebase primero.');return;}
+  if(!confirm('¿Resetear la partida? El jugador volverá a la pantalla de espera.'))return;
+  if(cronoInterval)clearInterval(cronoInterval);
+  juegoActivo=false; tiempoAgotado=false; tiempoInicio=null;
+  document.getElementById('crono-m').textContent='45:00';
+  document.getElementById('crono-m').className='crono-display';
+  document.getElementById('crono-fill').style.width='100%';
+  document.getElementById('crono-fill').className='crono-fill';
+  document.getElementById('estado-badge').className='estado-badge';
+  document.getElementById('estado-badge').textContent='⏸ Sin iniciar';
+  document.getElementById('btn-iniciar').disabled=false;
+  document.getElementById('btn-pausa').disabled=true;
+  document.getElementById('btn-pausa').className='btn-m btn-pausa';
+  document.getElementById('btn-pausa').textContent='⏸ Pausar';
+  document.getElementById('pausa-label').textContent='';
+  pausado=false; pausaTs=null;
+  ['bt5','bt2','bt1','bm1','bm2','bm5'].forEach(id=>document.getElementById(id).disabled=true);
+  await guardar({inicio_ts:null,resueltas:[],intentosPorPrueba:{},total_resueltas:0,mensaje_maestro:'',mensaje_ts:0});
+  addLog('info','<strong>Partida reiniciada</strong> por el maestro.');
+};
+
+// ── MENSAJES ──
+window.preset = function(t){document.getElementById('msg-input').value=t; document.getElementById('msg-input').focus();};
+window.enviarMsg = async function(){
+  const t=document.getElementById('msg-input').value.trim(); if(!t)return;
+  await guardar({mensaje_maestro:t,mensaje_ts:Date.now()});
+  const ok=document.getElementById('msg-ok'); ok.classList.add('show');
+  setTimeout(()=>ok.classList.remove('show'),2500);
+  addLog('info',`📨 Enviado: <em>"${t}"</em>`);
+};
+window.borrarMsg = async function(){
+  await guardar({mensaje_maestro:'',mensaje_ts:0});
+  document.getElementById('msg-input').value='';
+  addLog('info','Mensaje del peregrino borrado.');
+};
+
+// ── RENDER ──
+function renderMaestro(data){
+  const res=data.resueltas||[], int=data.intentosPorPrueba||{};
+  const nOk=res.length, nPend=PRUEBAS.length-nOk;
+  let nF=0; PRUEBAS.forEach(p=>{const t=int[p.id]||0,r=res.includes(p.id)?1:0;nF+=Math.max(0,t-r);});
+  const pct=Math.round(nOk/PRUEBAS.length*100);
+  document.getElementById('s-ok').textContent=nOk;
+  document.getElementById('s-pend').textContent=nPend;
+  document.getElementById('s-fallos').textContent=nF;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('camino-fill').style.width=pct+'%';
+  const pts=document.getElementById('camino-pts'); pts.innerHTML='';
+  PRUEBAS.forEach(p=>{const done=res.includes(p.id);const d=document.createElement('div');d.className='camino-pt'+(done?' done':'');d.textContent=done?'✦':p.id;d.title=p.titulo;pts.appendChild(d);});
+  const pf=document.createElement('div');pf.className='camino-pt final'+(nOk===PRUEBAS.length?' done':'');pf.textContent='⚓';pts.appendChild(pf);
+  const tbody=document.getElementById('tabla-body'); tbody.innerHTML='';
+  PRUEBAS.forEach(p=>{
+    const r=res.includes(p.id),ni=int[p.id]||0,nfa=r?Math.max(0,ni-1):ni;
+    let dots=''; const mx=Math.min(ni,8);
+    for(let i=0;i<mx;i++){dots+=`<div class="idot ${r&&i===ni-1?'ok':'f'}"></div>`;}
+    if(ni>8)dots+=`<span style="font-size:10px;color:var(--text-muted)">+${ni-8}</span>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-muted)">${toR(p.id)}</td><td style="font-size:17px">${p.icono}</td><td style="font-family:'IM Fell English SC',serif;font-size:13px">${p.titulo}</td><td>${r?'<span class="badge ok">✦ SUPERADA</span>':ni>0?'<span class="badge pen">⟳ EN CURSO</span>':'<span class="badge lck">— PENDIENTE</span>'}</td><td><span class="resp-badge">${p.respuesta||'—'}</span></td><td><div class="dot-bar">${dots||'<span style="font-size:10px;color:var(--text-muted)">—</span>'}${ni>0?`<span style="font-family:'Cinzel',serif;font-size:10px;color:var(--text-dim);margin-left:4px">${ni}</span>`:''}</div></td><td><span style="font-family:'Cinzel',serif;font-size:11px;color:${r?'var(--green-br)':ni>0?'var(--amber-lt)':'var(--text-muted)'}">${ni>0?ni+(ni===1?' intento':' intentos'):'—'}</span>${nfa>0?`<br><span style="font-size:10px;color:var(--red-lt);font-style:italic">${nfa} fallo(s)</span>`:''}</td>`;
+    tbody.appendChild(tr);
+  });
+  if(nOk===PRUEBAS.length)document.getElementById('final-banner').classList.add('show');
+  else document.getElementById('final-banner').classList.remove('show');
+}
+
+function detectarCambios(nuevo){
+  const rN=nuevo.resueltas||[],rA=ultimoEstado.resueltas||[];
+  const iN=nuevo.intentosPorPrueba||{},iA=ultimoEstado.intentosPorPrueba||{};
+  rN.forEach(id=>{if(!rA.includes(id)){const p=PRUEBAS.find(x=>x.id===id);addLog('ok',`<strong>${p?.icono} Prueba ${toR(id)} — ${p?.titulo}</strong> superada con ${iN[id]||'?'} intento(s).`);}});
+  PRUEBAS.forEach(p=>{const a=iA[p.id]||0,b=iN[p.id]||0;if(b>a&&!rN.includes(p.id)){addLog('fail',`${b-a} intento(s) fallido(s) en <strong>${p.icono} ${p.titulo}</strong>. Total: ${b}.`);}});
+  ultimoEstado=JSON.parse(JSON.stringify(nuevo));
+}
+
+function addLog(tipo,texto){
+  const list=document.getElementById('log-list');
+  const item=document.createElement('div');item.className='log-item';
+  item.innerHTML=`<div class="ldot ${tipo}"></div><div class="ltext">${texto}</div><div class="lhora">${hora()}</div>`;
+  list.insertBefore(item,list.firstChild);
+  while(list.children.length>60)list.removeChild(list.lastChild);
+}
+window.limpiarLog=function(){document.getElementById('log-list').innerHTML='';addLog('info','Log limpiado.');};
+
+function setConn(st){
+  const dot=document.getElementById('conn-dot'),txt=document.getElementById('conn-text'),live=document.getElementById('live-ind');
+  if(st==='ok'){dot.className='conn-dot ok';txt.textContent='EN VIVO';live.style.display='inline-flex';}
+  if(st==='err'){dot.className='conn-dot err';txt.textContent='Sin conexión';live.style.display='none';}
+  if(st==='wait'){dot.className='conn-dot wait';txt.textContent='Conectando...';live.style.display='none';}
+}
+
+// ── ARRANQUE ──
+document.getElementById('hora-ini').textContent=hora();
+// Config fija — no necesita formulario
+document.getElementById('setup-overlay').classList.add('hidden');
+conectar({
+  apiKey:"AIzaSyD6WPMALoBWUPPYAkbT0MXkeUtT6tVT7F0",
+  authDomain:"escaperoomprueba.firebaseapp.com",
+  projectId:"escaperoomprueba",
+  storageBucket:"escaperoomprueba.appspot.com",
+  messagingSenderId:"370330539854",
+  appId:"1:370330539854:web:0bb275c4e1a4b1fdb8301f"
+});
+</script>
+</body>
+</html>
