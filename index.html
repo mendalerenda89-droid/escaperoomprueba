@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aventura en el Camino</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#0F0C07;
+  font-family:'IM Fell English',serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:30px 20px;
+  background-image:
+    repeating-linear-gradient(92deg,transparent 0,rgba(201,168,76,0.03) 1px,transparent 2px,transparent 80px),
+    repeating-linear-gradient(182deg,transparent 0,rgba(43,31,14,0.07) 1px,transparent 2px,transparent 50px),
+    radial-gradient(ellipse at 30% 30%,rgba(139,105,20,0.07) 0%,transparent 55%),
+    radial-gradient(ellipse at 70% 70%,rgba(122,20,20,0.07) 0%,transparent 55%);
+}
+
+.wrap{
+  width:min(680px,100%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:0;
+}
+
+/* CABECERA */
+.cabecera{
+  text-align:center;
+  margin-bottom:48px;
+  position:relative;
+}
+.anno{
+  font-family:'Cinzel',serif;
+  font-size:9px;
+  letter-spacing:6px;
+  color:#5C4A28;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+.titulo{
+  font-family:'IM Fell English SC',serif;
+  font-size:clamp(28px,6vw,58px);
+  color:#C9A84C;
+  letter-spacing:3px;
+  line-height:1;
+  text-shadow:0 0 60px rgba(201,168,76,0.2);
+  margin-bottom:10px;
+}
+.separador{
+  width:220px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,#8B6914,transparent);
+  margin:16px auto;
+}
+.subtitulo{
+  font-size:clamp(12px,1.8vw,16px);
+  color:#5C4A28;
+  font-style:italic;
+  line-height:1.6;
+  max-width:420px;
+  margin:0 auto;
+}
+
+/* ORNAMENTO CENTRAL */
+.escudo{
+  font-size:48px;
+  margin-bottom:8px;
+  display:block;
+  filter:drop-shadow(0 0 20px rgba(201,168,76,0.25));
+}
+
+/* TARJETAS */
+.cards{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  width:100%;
+  margin-bottom:36px;
+}
+@media(max-width:500px){
+  .cards{grid-template-columns:1fr;gap:14px;}
+}
+
+.card{
+  text-decoration:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:32px 24px 28px;
+  border:1px solid rgba(201,168,76,0.2);
+  background:rgba(20,17,10,0.8);
+  position:relative;
+  overflow:hidden;
+  transition:all 0.3s ease;
+  cursor:pointer;
+}
+
+.card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(201,168,76,0.04) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* Línea superior decorativa */
+.card::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);
+  transition:background 0.3s;
+}
+
+.card:hover{
+  border-color:rgba(201,168,76,0.5);
+  background:rgba(26,22,12,0.9);
+  transform:translateY(-3px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(201,168,76,0.06);
+}
+
+.card:hover::after{
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,0.7),transparent);
+}
+
+.card.maestro:hover{ border-color:rgba(122,20,20,0.6); }
+.card.maestro::after{ background:linear-gradient(90deg,transparent,rgba(122,20,20,0.4),transparent); }
+.card.maestro:hover::after{ background:linear-gradient(90deg,transparent,rgba(160,30,30,0.8),transparent); }
+
+.card-icono{
+  font-size:42px;
+  margin-bottom:16px;
+  display:block;
+  transition:transform 0.3s;
+  filter:drop-shadow(0 0 10px rgba(201,168,76,0.1));
+}
+.card:hover .card-icono{ transform:scale(1.1); }
+
+.card-rol{
+  font-family:'Cinzel',serif;
+  font-size:8px;
+  letter-spacing:5px;
+  color:#5C4A28;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.card.maestro .card-rol{ color:#7A1414; }
+
+.card-titulo{
+  font-family:'IM Fell English SC',serif;
+  font-size:clamp(18px,3vw,26px);
+  color:#C9A84C;
+  margin-bottom:12px;
+  text-align:center;
+  line-height:1.2;
+}
+.card.maestro .card-titulo{ color:#C47070; }
+
+.card-desc{
+  font-size:13px;
+  color:#5C4A28;
+  font-style:italic;
+  text-align:center;
+  line-height:1.6;
+  margin-bottom:22px;
+}
+
+.card-btn{
+  display:inline-block;
+  padding:8px 22px;
+  border:1px solid rgba(201,168,76,0.3);
+  font-family:'Cinzel',serif;
+  font-size:9px;
+  letter-spacing:3px;
+  color:#8B6914;
+  text-transform:uppercase;
+  transition:all 0.2s;
+  background:rgba(201,168,76,0.04);
+}
+.card:hover .card-btn{
+  border-color:rgba(201,168,76,0.7);
+  color:#C9A84C;
+  background:rgba(201,168,76,0.08);
+}
+.card.maestro .card-btn{ border-color:rgba(122,20,20,0.3); color:#7A1414; }
+.card.maestro:hover .card-btn{ border-color:rgba(160,30,30,0.7); color:#C47070; background:rgba(122,20,20,0.08); }
+
+/* ESQUINAS DECORATIVAS */
+.corner{position:absolute;width:20px;height:20px;}
+.corner svg{width:100%;height:100%;}
+.corner.tl{top:8px;left:8px;}
+.corner.tr{top:8px;right:8px;transform:scaleX(-1);}
+.corner.bl{bottom:8px;left:8px;transform:scaleY(-1);}
+.corner.br{bottom:8px;right:8px;transform:scale(-1,-1);}
+
+/* PIE */
+.pie{
+  font-family:'Cinzel',serif;
+  font-size:9px;
+  letter-spacing:4px;
+  color:#3A2E1A;
+  text-transform:uppercase;
+  text-align:center;
+}
+.pie-sep{
+  width:120px;height:1px;
+  background:linear-gradient(90deg,transparent,#3A2E1A,transparent);
+  margin:0 auto 14px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="cabecera">
+    <div class="anno">Anno Domini MDLXXXIX</div>
+    <span class="escudo">⚜</span>
+    <h1 class="titulo">Aventura en el Camino</h1>
+    <div class="separador"></div>
+    <p class="subtitulo">Antes de que Drake profane la tumba del Apóstol,<br>vos debéis encontrarla</p>
+  </div>
+
+  <div class="cards">
+
+    <!-- JUGADOR -->
+    <a class="card jugador" href="jugador.html">
+      <div class="corner tl"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(201,168,76,0.3)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="1"/></svg></div>
+      <div class="corner tr"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(201,168,76,0.3)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="1"/></svg></div>
+      <div class="corner bl"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(201,168,76,0.3)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="1"/></svg></div>
+      <div class="corner br"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(201,168,76,0.3)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(201,168,76,0.3)" stroke-width="1"/></svg></div>
+      <span class="card-icono">🧭</span>
+      <div class="card-rol">⚜ Peregrino</div>
+      <div class="card-titulo">Panel del Jugador</div>
+      <p class="card-desc">Resuelve las nueve pruebas del Camino e introduce aquí las claves que vayas obteniendo.</p>
+      <span class="card-btn">Entrar al Camino →</span>
+    </a>
+
+    <!-- MAESTRO -->
+    <a class="card maestro" href="maestro.html">
+      <div class="corner tl"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(122,20,20,0.35)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(122,20,20,0.35)" stroke-width="1"/></svg></div>
+      <div class="corner tr"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(122,20,20,0.35)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(122,20,20,0.35)" stroke-width="1"/></svg></div>
+      <div class="corner bl"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(122,20,20,0.35)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(122,20,20,0.35)" stroke-width="1"/></svg></div>
+      <div class="corner br"><svg viewBox="0 0 20 20" fill="none"><path d="M2 2L18 2M2 2L2 18" stroke="rgba(122,20,20,0.35)" stroke-width="1.5"/><circle cx="4" cy="4" r="1.5" fill="none" stroke="rgba(122,20,20,0.35)" stroke-width="1"/></svg></div>
+      <span class="card-icono">📜</span>
+      <div class="card-rol">☠ Maestro del Camino</div>
+      <div class="card-titulo">Panel Maestro</div>
+      <p class="card-desc">Controla la partida, gestiona el tiempo, supervisa el progreso y envía pistas al peregrino.</p>
+      <span class="card-btn">Acceso restringido →</span>
+    </a>
+
+  </div>
+
+  <div class="pie">
+    <div class="pie-sep"></div>
+    Aventura en el Camino · Escape Room · AD MDLXXXIX
+  </div>
+
+</div>
+</body>
+</html>
